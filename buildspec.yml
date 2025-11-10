@@ -12,17 +12,17 @@ phases:
       - echo "Zipping Lambda function..."
       - zip -r function.zip .
       - echo "Uploading to S3..."
-      - aws s3 cp function.zip s3://<your-artifact-bucket-name>/
+      - aws s3 cp function.zip s3://artifacts-bucket-for-practice/
       - echo "Updating Lambda code..."
       - aws lambda update-function-code \
-          --function-name <your-lambda-name> \
-          --s3-bucket <your-artifact-bucket-name> \
+          --function-name cicd_function \
+          --s3-bucket artifacts-bucket-for-practice \
           --s3-key function.zip
       - echo "Publishing new version..."
-      - VERSION=$(aws lambda publish-version --function-name <your-lambda-name> --query 'Version' --output text)
+      - VERSION=$(aws lambda publish-version --function-name cicd_function --query 'Version' --output text)
       - echo "Updating alias 'prod' to version $VERSION..."
       - aws lambda update-alias \
-          --function-name <your-lambda-name> \
+          --function-name cicd_function \
           --name prod \
           --function-version $VERSION
 
