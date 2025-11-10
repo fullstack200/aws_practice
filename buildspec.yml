@@ -1,0 +1,32 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - pip install -r requirements.txt -t ./package || true
+      - echo "Install phase complete"
+  build:
+    commands:
+      - echo "Packaging lambda function..."
+      - mkdir -p package
+      - cp lambda_function.py package/
+      - cp -r scripts package/ || true
+      - cp appspec.yml package/ || true
+      - cd package
+      - zip -r ../function.zip .
+      - cd ..
+      - mkdir -p output
+      - mv function.zip output/
+      - cp appspec.yml output/
+      - echo "Build complete"
+post_build:
+  commands:
+    - echo "Build finished. Output ready."
+
+artifacts:
+  files:
+    - function.zip
+    - appspec.yml
+  discard-paths: yes
