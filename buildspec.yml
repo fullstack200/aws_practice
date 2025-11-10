@@ -5,28 +5,27 @@ phases:
     runtime-versions:
       python: 3.9
     commands:
-      - pip install -r requirements.txt -t ./package || true
-      - echo "Install phase complete"
+      - echo "Installing dependencies..."
+      - pip install -r requirements.txt -t .
   build:
     commands:
-      - echo "Packaging lambda function..."
-      - mkdir -p package
-      - cp lambda_function.py package/
-      - cp -r scripts package/ || true
-      - cp appspec.yml package/ || true
-      - cd package
-      - zip -r ../function.zip .
-      - cd ..
-      - mkdir -p output
-      - mv function.zip output/
-      - cp appspec.yml output/
-      - echo "Build complete"
-post_build:
-  commands:
-    - echo "Build finished. Output ready."
+      - echo "Zipping Lambda function..."
+      - zip -r function.zip .
+      - echo "Uploading to S3..."
+      - aws s3 cp function.zip s3://<your-artifact-bucket-name>/
+      - echo "Updating Lambda code..."
+      - aws lambda update-function-code \
+          --function-name <your-lambda-name> \
+          --s3-bucket <your-artifact-bucket-name> \
+          --s3-key function.zip
+      - echo "Publishing new version..."
+      - VERSION=$(aws lambda publish-version --function-name <your-lambda-name> --query 'Version' --output text)
+      - echo "Updating alias 'prod' to version $VERSION..."
+      - aws lambda update-alias \
+          --function-name <your-lambda-name> \
+          --name prod \
+          --function-version $VERSION
 
 artifacts:
   files:
     - function.zip
-    - appspec.yml
-  discard-paths: yes
